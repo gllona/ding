@@ -6,7 +6,6 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from escpos.printer import Usb, File as PrinterFile
-from escpos.exceptions import Error as EscposError
 
 from core.config import settings
 from core.database import SessionLocal
@@ -22,52 +21,71 @@ class PrinterService:
 
     def __init__(self):
         """Initialize printer service."""
-        self.printer = None
         self._lock = threading.Lock()
 
     def _connect_printer(self):
         """
         Connect to ESC/POS printer.
         Tries USB connection first, then falls back to file device.
-        """
-        if self.printer:
-            return self.printer
+        Always creates a fresh connection to avoid stale connections.
 
+        Returns:
+            Printer object (Usb or File)
+        """
         try:
             # Parse hex vendor and product IDs
             vendor_id = int(settings.printer_vendor_id, 16)
             product_id = int(settings.printer_product_id, 16)
 
             # Try USB connection
-            self.printer = Usb(vendor_id, product_id)
+            printer = Usb(vendor_id, product_id)
             print(f"✅ Connected to printer via USB ({settings.printer_vendor_id}:{settings.printer_product_id})")
-            return self.printer
+            return printer
 
         except Exception as e:
             print(f"⚠️  USB connection failed: {e}, trying file device...")
 
             try:
                 # Fallback to file device
-                self.printer = PrinterFile(settings.printer_device_path)
+                printer = PrinterFile(settings.printer_device_path)
                 print(f"✅ Connected to printer via file device ({settings.printer_device_path})")
-                return self.printer
+                return printer
 
             except Exception as e2:
                 print(f"❌ File device connection failed: {e2}")
                 raise ConnectionError(f"Failed to connect to printer: USB failed ({e}), File failed ({e2})")
 
-    def _feed_and_cut(self):
-        """Apply feed_before, feed_after, and cut_paper settings from YAML."""
+    def _close_printer(self, printer):
+        """
+        Close printer connection and release resources.
+
+        Args:
+            printer: Printer object to close
+        """
+        try:
+            if printer:
+                printer.close()
+                print(f"  🔌 Printer connection closed")
+        except Exception as e:
+            print(f"  ⚠️  Error closing printer: {e}")
+
+    def _feed_and_cut(self, printer):
+        """
+        Apply feed_before, feed_after, and cut_paper settings from YAML.
+
+        Args:
+            printer: Printer object to use
+        """
         feed_after = yaml_config.get_int("printer.feed_after_lines", 3)
         cut_paper = yaml_config.get_bool("printer.cut_paper", True)
 
         # Feed after content
         for _ in range(feed_after):
-            self.printer.text("\n")
+            printer.text("\n")
 
         # Cut paper if configured
         if cut_paper:
-            self.printer.cut()
+            printer.cut()
 
     def _get_font_size_config(self, font_size: str, is_cowsay: bool = False) -> int:
         """Get character limit for font size from YAML."""
@@ -75,24 +93,35 @@ class PrinterService:
         config_key = f"fonts.{font_size}.{prefix}_chars_per_line"
         return yaml_config.get_int(config_key, 32)
 
-    def _set_font_size(self, font_size: str):
-        """Set ESC/POS font size using YAML configuration."""
+    def _set_font_size(self, printer, font_size: str):
+        """
+        Set ESC/POS font size using YAML configuration.
+
+        Args:
+            printer: Printer object to use
+            font_size: Font size name (small/medium/large)
+        """
         width = yaml_config.get_int(f"fonts.{font_size}.width", 1)
         height = yaml_config.get_int(f"fonts.{font_size}.height", 1)
 
         # ALWAYS reset first to ensure clean state
-        self.printer._raw(b'\x1d\x21\x00')  # Reset to normal (1x1)
+        printer._raw(b'\x1d\x21\x00')  # Reset to normal (1x1)
 
         # ESC/POS GS ! n command: width and height from 0-7 (representing 1-8x)
         # Bit 0-2: width-1, Bit 4-6: height-1
         size_byte = ((width - 1) << 4) | (height - 1)
-        self.printer._raw(b'\x1d\x21' + bytes([size_byte]))
+        printer._raw(b'\x1d\x21' + bytes([size_byte]))
 
         print(f"  📏 Set font size: {font_size} ({width}x{height})")
 
-    def _reset_font_size(self):
-        """Reset font to normal size."""
-        self.printer._raw(b'\x1d\x21\x00')  # Reset to 1x1
+    def _reset_font_size(self, printer):
+        """
+        Reset font to normal size.
+
+        Args:
+            printer: Printer object to use
+        """
+        printer._raw(b'\x1d\x21\x00')  # Reset to 1x1
         print(f"  📏 Reset font to normal")
 
     def print_text(
@@ -113,6 +142,7 @@ class PrinterService:
             font_size: Font size (small/medium/large/banner)
             use_cowsay: Whether to use cowsay format
         """
+        printer = None
         try:
             # Banner mode: render text as image
             if font_size == "banner":
@@ -120,7 +150,7 @@ class PrinterService:
                 return
 
             # Regular text printing
-            # Connect to printer
+            # Connect to printer (fresh connection each time)
             printer = self._connect_printer()
 
             # Feed before
@@ -135,22 +165,25 @@ class PrinterService:
             prepared_text = prepare_text_for_print(text, max_width, use_cowsay)
 
             # Set font size
-            self._set_font_size(font_size)
+            self._set_font_size(printer, font_size)
 
             # Print text
             printer.text(prepared_text)
             printer.text("\n")
 
             # Reset font size
-            self._reset_font_size()
+            self._reset_font_size(printer)
 
             # Feed and cut
-            self._feed_and_cut()
+            self._feed_and_cut(printer)
 
             print(f"✅ Printed text job {job_id} (font: {font_size})")
 
         except Exception as e:
             raise Exception(f"Error printing text: {e}")
+        finally:
+            # Always close the printer connection
+            self._close_printer(printer)
 
     def _print_text_banner(self, db: Session, job_id: int, text: str):
         """
@@ -161,6 +194,7 @@ class PrinterService:
             job_id: Job ID
             text: Text to print as banner
         """
+        printer = None
         try:
             # Get printer width
             dots_per_line = yaml_config.get_int("printer.dots_per_line", 384)
@@ -173,12 +207,12 @@ class PrinterService:
             processed_path = str(Path(settings.store_path) / f"banner_{job_id}.png")
             from PIL import Image
             img = Image.open(temp_path)
-            img = img.transpose(Image.ROTATE_90)
+            img = img.transpose(Image.Transpose.ROTATE_90)
             img.save(processed_path)
 
             print(f"  🔄 Rotated banner 90° counterclockwise")
 
-            # Print as image
+            # Print as image (fresh connection)
             printer = self._connect_printer()
 
             # Feed before
@@ -190,7 +224,7 @@ class PrinterService:
             printer.image(processed_path)
 
             # Feed and cut
-            self._feed_and_cut()
+            self._feed_and_cut(printer)
 
             print(f"✅ Printed banner job {job_id}")
 
@@ -200,6 +234,9 @@ class PrinterService:
 
         except Exception as e:
             raise Exception(f"Error printing banner: {e}")
+        finally:
+            # Always close the printer connection
+            self._close_printer(printer)
 
     def print_image(
         self,
@@ -221,8 +258,9 @@ class PrinterService:
             font_size: Font size for caption
             is_banner: Whether to rotate image for banner mode
         """
+        printer = None
         try:
-            # Connect to printer
+            # Connect to printer (fresh connection)
             printer = self._connect_printer()
 
             # Feed before
@@ -247,7 +285,7 @@ class PrinterService:
             # Print caption if provided (not in banner mode)
             if caption and not is_banner:
                 printer.text("\n")
-                self._set_font_size(font_size)
+                self._set_font_size(printer, font_size)
 
                 max_chars = self._get_font_size_config(font_size, False)
                 prepared_caption = prepare_text_for_print(caption, max_chars, False)
@@ -255,15 +293,18 @@ class PrinterService:
                 printer.text("\n")
 
                 # Reset font size
-                self._reset_font_size()
+                self._reset_font_size(printer)
 
             # Feed and cut
-            self._feed_and_cut()
+            self._feed_and_cut(printer)
 
             print(f"✅ Printed image job {job_id}")
 
         except Exception as e:
             raise Exception(f"Error printing image: {e}")
+        finally:
+            # Always close the printer connection
+            self._close_printer(printer)
 
     def process_job(self, job_id: int):
         """
