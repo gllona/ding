@@ -1,0 +1,523 @@
+{
+	"info": {
+		"_postman_id": "ding-api-collection-001",
+		"name": "DING API",
+		"description": "API collection for DING - Retro Receipt Printer Web Interface\n\nAuthentication: All endpoints require Bearer token with API_KEY.\n\nBase URL: http://localhost:8000",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{API_KEY}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "User Management",
+			"item": [
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/users",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						},
+						"description": "Create a new user with username and email."
+					},
+					"response": []
+				},
+				{
+					"name": "List Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/users?skip=0&limit=100",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"users"
+							],
+							"query": [
+								{
+									"key": "skip",
+									"value": "0"
+								},
+								{
+									"key": "limit",
+									"value": "100"
+								}
+							]
+						},
+						"description": "Get list of all users with pagination."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/users/1",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						},
+						"description": "Get user details by user ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"johndoe_updated\",\n  \"email\": \"johndoe_new@example.com\",\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/users/1",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						},
+						"description": "Update user information."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/users/1",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						},
+						"description": "Delete or deactivate a user."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for managing users (CRUD operations)."
+		},
+		{
+			"name": "Configuration",
+			"item": [
+				{
+					"name": "Get All Config",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/config",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"config"
+							]
+						},
+						"description": "Get all configuration parameters."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Config by Key",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/config/session_timeout_minutes",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"config",
+								"session_timeout_minutes"
+							]
+						},
+						"description": "Get specific configuration value by key."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Config",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"value\": \"120\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/config/session_timeout_minutes",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"config",
+								"session_timeout_minutes"
+							]
+						},
+						"description": "Update a specific configuration parameter."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Printer Dots Per Line",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"value\": \"576\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/config/printer_dots_per_line",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"config",
+								"printer_dots_per_line"
+							]
+						},
+						"description": "Update printer dots per line setting."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Font Size Config (Small)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"value\": \"48\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/config/text_chars_per_line_small",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"config",
+								"text_chars_per_line_small"
+							]
+						},
+						"description": "Update text characters per line for small font."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for managing application configuration."
+		},
+		{
+			"name": "Jobs",
+			"item": [
+				{
+					"name": "Get All Jobs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/jobs",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"jobs"
+							]
+						},
+						"description": "Get all printer jobs without filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Jobs by Username",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/jobs?username=johndoe",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"jobs"
+							],
+							"query": [
+								{
+									"key": "username",
+									"value": "johndoe"
+								}
+							]
+						},
+						"description": "Filter jobs by username."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Jobs by Date Range",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/jobs?start_date=2025-11-01T00:00:00&end_date=2025-11-30T23:59:59",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"jobs"
+							],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2025-11-01T00:00:00"
+								},
+								{
+									"key": "end_date",
+									"value": "2025-11-30T23:59:59"
+								}
+							]
+						},
+						"description": "Filter jobs by timestamp range (ISO 8601 format)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Jobs by Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/jobs?status=failed",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"jobs"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "failed"
+								}
+							]
+						},
+						"description": "Filter jobs by status (pending, processing, success, failed)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Jobs (Combined Filters)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/jobs?username=johndoe&status=success&start_date=2025-11-01T00:00:00&end_date=2025-11-30T23:59:59",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"jobs"
+							],
+							"query": [
+								{
+									"key": "username",
+									"value": "johndoe"
+								},
+								{
+									"key": "status",
+									"value": "success"
+								},
+								{
+									"key": "start_date",
+									"value": "2025-11-01T00:00:00"
+								},
+								{
+									"key": "end_date",
+									"value": "2025-11-30T23:59:59"
+								}
+							]
+						},
+						"description": "Combine multiple filters: username, status, and date range."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Job by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/jobs/1",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"jobs",
+								"1"
+							]
+						},
+						"description": "Get details of a specific printer job."
+					},
+					"response": []
+				},
+				{
+					"name": "Download Job Image",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/jobs/1/image",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"jobs",
+								"1",
+								"image"
+							]
+						},
+						"description": "Download the image file associated with a job (if exists)."
+					},
+					"response": []
+				},
+				{
+					"name": "Retry Failed Job",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/jobs/1/retry",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"jobs",
+								"1",
+								"retry"
+							]
+						},
+						"description": "Retry a failed printer job."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for querying and managing printer jobs."
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "API Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/health",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check if the API is running."
+					},
+					"response": []
+				}
+			],
+			"description": "Health check endpoint (no authentication required)."
+		}
+	],
+	"variable": [
+		{
+			"key": "BASE_URL",
+			"value": "http://localhost:8508",
+			"type": "string"
+		},
+		{
+			"key": "API_KEY",
+			"value": "your-secret-api-key-here",
+			"type": "string"
+		}
+	]
+}

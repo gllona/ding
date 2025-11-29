@@ -1,0 +1,64 @@
+# DING Configuration File
+# All application settings can be configured here
+
+# Printer Hardware Settings
+printer:
+  dots_per_line: 384          # Maximum width in dots (58mm = 384, 80mm = 576)
+  vendor_id: "0x0416"         # USB vendor ID
+  product_id: "0x5011"        # USB product ID
+  device_path: "/dev/usb/lp0" # File device path (fallback)
+
+  # Paper feed settings
+  feed_before_lines: 1        # Lines to feed before printing
+  feed_after_lines: 1         # Lines to feed after printing
+  cut_paper: true             # Whether to cut paper after printing
+
+# Font Size Settings
+# Each font size has different character limits per line
+# Note: Cowsay mode always uses small font for best readability
+fonts:
+  small:
+    width: 1                  # ESC/POS width multiplier (1-8)
+    height: 1                 # ESC/POS height multiplier (1-8)
+    text_chars_per_line: 32   # Max characters for plain text
+    cowsay_chars_per_line: 28 # Max characters for cowsay bubble (always small)
+
+  medium:
+    width: 2
+    height: 2
+    text_chars_per_line: 16
+
+  large:
+    width: 3
+    height: 3
+    text_chars_per_line: 10
+
+  banner:
+    # Banner mode uses text-to-image rendering
+    # Text is rendered horizontally, then rotated 90° counterclockwise
+    # Font size auto-calculated to fill 70% of printer width
+    # Single line only, perfect for vertical signs and announcements
+    text_chars_per_line: 50   # Approximate max characters (dynamically calculated)
+
+# Session & Authentication Settings
+session:
+  timeout_minutes: 180        # Session duration (3 hours)
+  warning_minutes: 5          # Warn user N minutes before expiry
+  pin_expiry_minutes: 10      # PIN validity duration
+  pin_rate_limit_minutes: 1   # Minimum time between PIN requests
+
+# Email Settings (override with environment variables)
+email:
+  # These should be set in .env file for security
+  # SENDGRID_API_KEY=your-key-here
+  # SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+
+# Database Settings
+database:
+  url: "sqlite:///./ding.db"  # Database connection string
+
+# Application Settings
+app:
+  name: "DING"
+  url: "http://localhost:8501"
+  store_path: "store"         # Directory for uploaded images
