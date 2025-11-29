@@ -2,6 +2,7 @@
 import emoji
 import subprocess
 import textwrap
+import shutil
 from typing import Optional
 from unidecode import unidecode
 
@@ -59,6 +60,41 @@ def wrap_text_for_printer(text: str, max_width: int) -> str:
     return '\n'.join(lines)
 
 
+def find_cowsay_command() -> Optional[str]:
+    """
+    Find cowsay command in system PATH and common locations.
+
+    Returns:
+        Full path to cowsay executable or None if not found
+    """
+    # Try shutil.which first (searches PATH)
+    cowsay_path = shutil.which('cowsay')
+    if cowsay_path:
+        return cowsay_path
+
+    # Check common locations where cowsay might be installed
+    common_paths = [
+        '/usr/games/cowsay',
+        '/usr/local/bin/cowsay',
+        '/usr/bin/cowsay',
+        '/bin/cowsay',
+    ]
+
+    for path in common_paths:
+        try:
+            result = subprocess.run(
+                [path, '--version'],
+                capture_output=True,
+                timeout=2
+            )
+            if result.returncode == 0:
+                return path
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            continue
+
+    return None
+
+
 def generate_cowsay(text: str, max_width: int) -> Optional[str]:
     """
     Generate cowsay output for text.
@@ -71,12 +107,19 @@ def generate_cowsay(text: str, max_width: int) -> Optional[str]:
         Cowsay output or None if cowsay command fails
     """
     try:
+        # Find cowsay command
+        cowsay_cmd = find_cowsay_command()
+        if not cowsay_cmd:
+            print("❌ Cowsay command not found. Please install cowsay: sudo apt install cowsay")
+            print("   Common locations checked: /usr/games/cowsay, /usr/bin/cowsay, /usr/local/bin/cowsay")
+            return None
+
         # Encode text for printing first
         encoded_text = encode_for_escpos(text)
 
-        # Run cowsay command
+        # Run cowsay command with full path
         result = subprocess.run(
-            ['cowsay', '-W', str(max_width), encoded_text],
+            [cowsay_cmd, '-W', str(max_width), encoded_text],
             capture_output=True,
             text=True,
             timeout=5
@@ -90,9 +133,6 @@ def generate_cowsay(text: str, max_width: int) -> Optional[str]:
 
     except subprocess.TimeoutExpired:
         print("⚠️  Cowsay command timed out")
-        return None
-    except FileNotFoundError:
-        print("❌ Cowsay command not found. Please install cowsay: sudo apt install cowsay")
         return None
     except Exception as e:
         print(f"❌ Error generating cowsay: {e}")
