@@ -3,6 +3,7 @@ import emoji
 import subprocess
 import textwrap
 import shutil
+import os
 from typing import Optional
 from unidecode import unidecode
 
@@ -73,6 +74,7 @@ def find_cowsay_command() -> Optional[str]:
         return cowsay_path
 
     # Check common locations where cowsay might be installed
+    # Use file existence check instead of running commands
     common_paths = [
         '/usr/games/cowsay',
         '/usr/local/bin/cowsay',
@@ -81,16 +83,8 @@ def find_cowsay_command() -> Optional[str]:
     ]
 
     for path in common_paths:
-        try:
-            result = subprocess.run(
-                [path, '--version'],
-                capture_output=True,
-                timeout=2
-            )
-            if result.returncode == 0:
-                return path
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            continue
+        if os.path.isfile(path) and os.access(path, os.X_OK):
+            return path
 
     return None
 
