@@ -84,6 +84,8 @@ ding/
 
 ## 🚀 Quick Start
 
+> See also the [Raspberry Pi Full Setup Guide](docs/RASPBERRY_PI_FULL_SETUP.md)!
+
 ### Prerequisites
 - Python 3.10+
 - ESC/POS thermal printer (USB or /dev/usb/lp0)
@@ -326,6 +328,7 @@ Find your printer IDs:
 ```bash
 lsusb
 # Example output: Bus 001 Device 005: ID 0416:5011 Printer
+# Example output: Bus 001 Device 089: ID 0416:5011 Winbond Electronics Corp. Virtual Com Port
 ```
 
 #### File Device Connection
